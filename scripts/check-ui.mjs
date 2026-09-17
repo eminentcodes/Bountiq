@@ -1,0 +1,50 @@
+import { chromium } from 'playwright'
+const browser = await chromium.launch({ channel: 'chromium' })
+const page = await browser.newPage({ viewport: { width: 1440, height: 980 } })
+const errors = []
+page.on('pageerror', (e) => errors.push('PAGEERROR: ' + e.message))
+page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()) })
+
+await page.goto('http://localhost:5174/', { waitUntil: 'networkidle' })
+await page.waitForTimeout(6000)
+console.log('root path:', new URL(page.url()).pathname)
+const heading = await page.locator('h1').first().innerText()
+console.log('root heading:', heading.replace(/\s+/g, ' '))
+console.log('rows on root:', await page.locator('main button').filter({ hasText: /GEN/ }).count())
+const nav = (await page.locator('nav').first().innerText()).replace(/\s+/g, ' ')
+console.log('nav:', nav.slice(0, 90))
+console.log('bell present:', (await page.locator('[aria-label="Your submission activity"]').count()) > 0)
+
+await page.locator('[aria-label="Your submission activity"]').click()
+await page.waitForTimeout(700)
+console.log('notification panel:', (await page.getByText('Your submissions').count()) > 0)
+await page.screenshot({ path: 'shot-bounties.png', fullPage: true })
+await page.keyboard.press('Escape')
+
+const rows = page.locator('main button').filter({ hasText: /GEN/ })
+await rows.first().click()
+await page.waitForTimeout(4000)
+const title1 = await page.locator('h1').first().innerText()
+console.log('')
+console.log('opened bounty:', title1.replace(/\s+/g, ' '))
+
+// persistence: leave the page, come back, and reload
+await page.getByRole('button', { name: /Back to bounties/i }).click()
+await page.waitForTimeout(2000)
+await page.locator('nav').first().getByRole('button', { name: /Submit work/i }).click()
+await page.waitForTimeout(4000)
+const title2 = await page.locator('h1').first().innerText()
+console.log('after leaving and returning:', title2.replace(/\s+/g, ' '))
+console.log('same bounty recovered:', title1.trim() === title2.trim())
+
+await page.reload({ waitUntil: 'networkidle' })
+await page.waitForTimeout(5000)
+const title3 = await page.locator('h1').first().innerText()
+console.log('after full reload:', title3.replace(/\s+/g, ' '))
+console.log('survives reload:', title1.trim() === title3.trim())
+await page.screenshot({ path: 'shot-submit-persist.png', fullPage: true })
+
+console.log('')
+console.log('console errors:', errors.length)
+for (const e of errors.slice(0, 6)) console.log('  !', e.slice(0, 170))
+await browser.close()

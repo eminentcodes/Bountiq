@@ -1,0 +1,112 @@
+import { readFileSync, writeFileSync } from 'node:fs'
+
+// ---- 1. genlayer.js : drop the in-browser demo wallet entirely ----
+const g = 'src/lib/genlayer.js'
+let gl = readFileSync(g, 'utf8')
+const gsub = (from, to, label) => {
+  if (!gl.includes(from)) throw new Error('genlayer anchor missing: ' + label)
+  gl = gl.replace(from, to)
+}
+
+gsub("import { createClient, createAccount, generatePrivateKey } from 'genlayer-js'", "import { createClient } from 'genlayer-js'", 'imports')
+gsub("const ACCOUNT_KEY = 'bountiq.account.privateKey'\n", '', 'account key const')
+
+const demoStart = gl.indexOf('/** Wallet held in this browser. No extension required. */')
+const demoEnd = gl.indexOf('async function ensureChain(provider) {')
+if (demoStart === -1 || demoEnd === -1) throw new Error('demo wallet block not found')
+gl = gl.slice(0, demoStart) + gl.slice(demoEnd)
+
+gsub(
+  "export function getClient() {\n  if (cachedClient) return cachedClient\n  if (state.mode === 'demo' && state.account) {\n    cachedClient = createClient({ chain: studionet, account: state.account, endpoint: ENDPOINT })\n  } else if (state.mode === 'browser' && state.provider) {",
+  "export function getClient() {\n  if (cachedClient) return cachedClient\n  if (state.mode === 'browser' && state.provider) {",
+  'client factory'
+)
+
+gsub("  if (mode === 'demo') {\n    return connectDemoWallet()\n  }\n", '', 'restore demo branch')
+gsub("let state = { mode: null, address: null, account: null, provider: null }", "let state = { mode: null, address: null, provider: null }", 'state shape')
+gsub("  setState({ mode: 'browser', address: accounts[0], account: null, provider })", "  setState({ mode: 'browser', address: accounts[0], provider })", 'connect state')
+gsub("        setState({ mode: 'browser', address: accounts[0], account: null, provider: window.ethereum })", "        setState({ mode: 'browser', address: accounts[0], provider: window.ethereum })", 'restore state')
+gsub("  setState({ mode: null, address: null, account: null, provider: null })", "  setState({ mode: null, address: null, provider: null })", 'disconnect state')
+gsub("// Two ways to hold a wallet:\n//   browser - an injected EIP-1193 wallet such as MetaMask\n//   demo    - a key generated in this browser, for a zero-setup demo\n//\n// Reads work without any wallet, so the marketplace is browsable immediately.\n// Writes require a connection.",
+     "// Wallets are injected EIP-1193 providers such as MetaMask. Bountiq does not\n// create or hold keys. Reads work without a wallet so the marketplace is\n// browsable immediately; writes require a connection.", 'header comment')
+
+writeFileSync(g, gl)
+
+// ---- 2. main.jsx : centered modal instead of a dropdown ----
+const m = 'src/main.jsx'
+let ml = readFileSync(m, 'utf8')
+const start = ml.indexOf('function WalletButton(')
+const end = ml.indexOf('function AppShell({ children, page, setPage }) {')
+if (start === -1 || end === -1) throw new Error('wallet component block not found')
+
+const MODAL = `function WalletButton({ full = false }) {
+  const wallet = useWallet()
+  const [open, setOpen] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e) => { if (e.key === 'Escape') setOpen(false) }
+    window.addEventListener('keydown', onKey)
+    document.body.style.overflow = 'hidden'
+    return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = '' }
+  }, [open])
+
+  const connect = async () => {
+    setBusy(true); setError('')
+    try { await connectBrowserWallet(); setOpen(false) }
+    catch (e) { setError(e && e.message ? e.message : 'Could not connect the wallet.') }
+    finally { setBusy(false) }
+  }
+
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(wallet.address); setCopied(true); window.setTimeout(() => setCopied(false), 1600) } catch {}
+  }
+
+  return <>
+    <button onClick={() => setOpen(true)} className={(full ? 'w-full justify-center ' : '') + 'glass flex items-center gap-2 rounded-xl px-3 py-2.5 text-[11px] font-semibold text-[#405467] transition hover:text-[#0d1a2b]'}>
+      {wallet.address ? <><span className="size-2 rounded-full bg-[#69a882]"/>{shortAddress(wallet.address)}</> : <><Wallet size={14}/>Connect wallet</>}
+    </button>
+
+    {open && <div role="dialog" aria-modal="true" onClick={() => setOpen(false)} className="fixed inset-0 z-[100] grid place-items-center bg-[#0d1a2b]/40 p-4 backdrop-blur-sm">
+      <div onClick={(e) => e.stopPropagation()} className="glass w-full max-w-md rounded-[22px] p-7 text-left shadow-2xl">
+        <div className="mb-5 flex items-start justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#607486]">{wallet.address ? 'Wallet connected' : 'Connect a wallet'}</p>
+            <h2 className="mt-2 font-display text-2xl font-bold tracking-[-.04em]">{wallet.address ? 'Your GenLayer session' : 'Sign in to Bountiq'}</h2>
+          </div>
+          <button onClick={() => setOpen(false)} aria-label="Close" className="rounded-lg px-2 py-1 text-lg leading-none text-[#718396] transition hover:text-[#0d1a2b]">×</button>
+        </div>
+
+        {wallet.address ? <>
+          <p className="text-sm leading-relaxed text-[#526274]">Submissions and new bounties are signed by this account on GenLayer Studionet.</p>
+          <div className="mt-5 rounded-xl bg-white/45 p-4">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[#607486]">Address</p>
+            <p className="mt-1.5 break-all font-display text-xs font-semibold text-[#0d1a2b]">{wallet.address}</p>
+            <p className="mt-3 text-xs text-[#718396]">Network · ${CHAIN_NAME_PLACEHOLDER}</p>
+          </div>
+          <div className="mt-5 grid gap-2">
+            <button onClick={copy} className="flex items-center justify-center gap-2 rounded-xl bg-white/55 px-4 py-3 text-xs font-semibold text-[#405467]"><Copy size={14}/>{copied ? 'Copied' : 'Copy address'}</button>
+            <a href={explorerLink(wallet.address)} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 rounded-xl bg-white/55 px-4 py-3 text-xs font-semibold text-[#405467]"><ExternalLink size={14}/>View on explorer</a>
+            <button onClick={disconnectWallet} className="flex items-center justify-center gap-2 rounded-xl bg-[#0c1a2b] px-4 py-3 text-xs font-semibold text-white"><LogOut size={14}/>Disconnect wallet</button>
+          </div>
+        </> : <>
+          <p className="text-sm leading-relaxed text-[#526274]">Bountiq does not create or store keys. Connect an injected browser wallet such as MetaMask to sign your transactions.</p>
+          <button disabled={busy} onClick={connect} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#0c1a2b] px-4 py-3.5 text-sm font-semibold text-white disabled:opacity-40">{busy ? 'Waiting for your wallet...' : <><Wallet size={15}/>Connect browser wallet</>}</button>
+          {!hasBrowserWallet() && <p className="mt-4 rounded-xl bg-[#f6e7cd]/60 p-3 text-[11px] leading-relaxed text-[#8a6320]">No injected wallet detected. Install MetaMask (or another EIP-1193 wallet) and reload this page.</p>}
+          {error && <p className="mt-4 text-[11px] leading-relaxed text-[#8a3f2c]">{error}</p>}
+        </>}
+      </div>
+    </div>}
+  </>
+}
+
+`
+ml = ml.slice(0, start) + MODAL + ml.slice(end)
+ml = ml.replace('${CHAIN_NAME_PLACEHOLDER}', "'Studionet'")
+ml = ml.replace('shortAddress, explorerLink, isConfigured, getState, subscribe, restoreWallet, connectDemoWallet, connectBrowserWallet, disconnectWallet, hasBrowserWallet',
+                'shortAddress, explorerLink, isConfigured, getState, subscribe, restoreWallet, connectBrowserWallet, disconnectWallet, hasBrowserWallet')
+writeFileSync(m, ml)
+console.log('modal + real-wallet-only applied')

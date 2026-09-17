@@ -1,0 +1,55 @@
+{
+  "voice": {
+    "provider": "Microsoft Edge neural voices",
+    "voice": "en-US-JennyNeural",
+    "rate": "-10%",
+    "style": "calm, clear female product narration"
+  },
+  "scenes": [
+    {
+      "id": "01-intro",
+      "text": "Bountiq is a verified work marketplace built on GenLayer. Bounties are posted with a reward and explicit acceptance criteria. Contributors send real deliverables, and payment only releases once the work is verified."
+    },
+    {
+      "id": "02-problem",
+      "text": "The hard part of any bounty platform is judgment. Traditionally the person who posted the bounty also decides whether the work is good enough, so contributors simply have to trust them. Bountiq replaces that trust with a validator committee. Independent GenLayer validators read the deliverable and score it against every criterion, and the verdict is written on chain."
+    },
+    {
+      "id": "03-landing",
+      "text": "The landing page explains the flow in three steps. Post the work. Submit the outcome. Verify the evidence before payment moves."
+    },
+    {
+      "id": "04-contract",
+      "text": "This frontend is not a mock. Every bounty and every submission you are about to see is read from a live GenLayer Studionet contract, deployed from the Python intelligent contract in this repository."
+    },
+    {
+      "id": "05-bounties",
+      "text": "This is the live marketplace. Each row is chain state: the reward, the brand behind it, and how many submissions have arrived against the gate the creator set."
+    },
+    {
+      "id": "06-submit",
+      "text": "Opening a bounty shows the acceptance criteria exactly as the contract stores them. The contributor writes the deliverable and submits it, signed by the connected wallet."
+    },
+    {
+      "id": "07-evaluating",
+      "text": "The contract then invokes the validator committee. Every criterion is checked against the deliverable, and independent validators must agree on the result before it is accepted."
+    },
+    {
+      "id": "08-verdict",
+      "text": "Here is the verdict. A pass or fail for each criterion, with a written reason and a score, recorded on chain against this submission."
+    },
+    {
+      "id": "09-hub",
+      "text": "Contributors get one home for every submission, with the verdict, the reason it failed, and a retry for work that did not pass."
+    },
+    {
+      "id": "10-creator",
+      "text": "Creators manage their own bounties. They review submissions, select winners from the reward pool, and release payment. Escrow is funded at creation, so the reward is guaranteed to exist."
+    },
+    {
+      "id": "11-close",
+      "minHold": 13,
+      "text": "Bountiq. Verified work, fairly rewarded on GenLayer. The contract, the deployment scripts and the smoke tests are all in the repository."
+    }
+  ]
+}

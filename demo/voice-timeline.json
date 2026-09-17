@@ -1,0 +1,73 @@
+{
+  "voice": "en-US-JennyNeural",
+  "rate": "-10%",
+  "totalSeconds": 149.04,
+  "scenes": [
+    {
+      "id": "01-intro",
+      "file": "01-intro.mp3",
+      "seconds": 16.008,
+      "minHold": 0
+    },
+    {
+      "id": "02-problem",
+      "file": "02-problem.mp3",
+      "seconds": 25.296,
+      "minHold": 0
+    },
+    {
+      "id": "03-landing",
+      "file": "03-landing.mp3",
+      "seconds": 11.976,
+      "minHold": 0
+    },
+    {
+      "id": "04-contract",
+      "file": "04-contract.mp3",
+      "seconds": 14.064,
+      "minHold": 0
+    },
+    {
+      "id": "05-bounties",
+      "file": "05-bounties.mp3",
+      "seconds": 11.568,
+      "minHold": 0
+    },
+    {
+      "id": "06-submit",
+      "file": "06-submit.mp3",
+      "seconds": 12.168,
+      "minHold": 0
+    },
+    {
+      "id": "07-evaluating",
+      "file": "07-evaluating.mp3",
+      "seconds": 12.408,
+      "minHold": 0
+    },
+    {
+      "id": "08-verdict",
+      "file": "08-verdict.mp3",
+      "seconds": 10.2,
+      "minHold": 0
+    },
+    {
+      "id": "09-hub",
+      "file": "09-hub.mp3",
+      "seconds": 9.024,
+      "minHold": 0
+    },
+    {
+      "id": "10-creator",
+      "file": "10-creator.mp3",
+      "seconds": 14.544,
+      "minHold": 0
+    },
+    {
+      "id": "11-close",
+      "file": "11-close.mp3",
+      "seconds": 11.784,
+      "minHold": 13
+    }
+  ]
+}

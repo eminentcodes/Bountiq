@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="Bountiq">
+  <defs>
+    <linearGradient id="bq-bg" x1="4" y1="2" x2="60" y2="62" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1E4162"/>
+      <stop offset="1" stop-color="#0B1827"/>
+    </linearGradient>
+    <radialGradient id="bq-orb" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(24.5 22.5) rotate(52) scale(38)">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset=".5" stop-color="#C7DBEB"/>
+      <stop offset="1" stop-color="#6D8CA7"/>
+    </radialGradient>
+  </defs>
+  <rect width="64" height="64" rx="19" fill="url(#bq-bg)"/>
+  <rect x=".75" y=".75" width="62.5" height="62.5" rx="18.25" stroke="#FFFFFF" stroke-opacity=".16" stroke-width="1.5"/>
+  <circle cx="32" cy="30" r="15.5" fill="url(#bq-orb)"/>
+  <circle cx="25.5" cy="23.5" r="4" fill="#FFFFFF" fill-opacity=".7"/>
+  <path d="M22.5 31 29 37.5 42.5 23" stroke="#0C1A2B" stroke-width="5.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="50" cy="50" r="6.5" fill="#69A882" stroke="#0B1827" stroke-width="2.5"/>
+</svg>
