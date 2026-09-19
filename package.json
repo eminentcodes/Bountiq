@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy:devnet": "node scripts/deploy-devnet.mjs",
+    "verify:state": "node scripts/verify-state.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "latest",
@@ -19,5 +21,8 @@
     "react-dom": "latest",
     "tailwindcss": "latest",
     "vite": "latest"
+  },
+  "devDependencies": {
+    "genlayer-js-2": "npm:genlayer-js@2.0.0-rc.1"
   }
 }

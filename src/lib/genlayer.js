@@ -8,9 +8,25 @@ import { createClient } from 'genlayer-js'
 import { studionet } from 'genlayer-js/chains'
 import { TransactionStatus } from 'genlayer-js/types'
 
-export const CONTRACT_ADDRESS = import.meta.env.VITE_BOUNTIQ_CONTRACT
+// The deployed address is public, and .env is gitignored, so a fresh clone or a
+// host without env vars configured would otherwise boot with no contract.
+// VITE_BOUNTIQ_CONTRACT still overrides this.
+export const CONTRACT_ADDRESS =
+  import.meta.env.VITE_BOUNTIQ_CONTRACT || '0xB86727DcEBb4cB1E11421fB3dF28e9cc326d79e7'
 export const EXPLORER = 'https://explorer-studio.genlayer.com'
 export const CHAIN_NAME = 'GenLayer Studionet'
+
+// The hackathon form required a contract deployed on Studio Devnet (chain
+// 61997). That deployment is public, so it is surfaced in the landing header to
+// keep it discoverable independently of the form. The app itself runs on
+// Studionet above, because genlayer-js 1.1.8 cannot pay the non-zero fee that
+// 61997 requires.
+export const DEVNET_CONTRACT = '0xa476Bd972187BFCc8bbA05D107C221bC31Be15B5'
+export const DEVNET_EXPLORER = 'https://explorer-studio-dev.genlayer.com'
+
+export function devnetContractLink() {
+  return `${DEVNET_EXPLORER}/address/${DEVNET_CONTRACT}`
+}
 
 const MODE_KEY = 'bountiq.wallet.mode'
 

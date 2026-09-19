@@ -5,7 +5,7 @@ import { ArrowRight, ArrowUpRight, Check, ChevronDown, ChevronRight, ExternalLin
 import { motion } from 'motion/react'
 import './index.css'
 import { Brand } from './components/Brand'
-import { fetchState, createBounty, fundBounty, submitWork as submitWorkToChain, resubmitWork, reviewSubmission, approvePayment, markPaid, remainingSlots, isFull, shortAddress, explorerLink, transactionLink, formatGen, parseGenToWei, validateBountyDraft, isConfigured, getState, subscribe, restoreWallet, connectBrowserWallet, disconnectWallet, hasBrowserWallet } from './lib/genlayer'
+import { fetchState, createBounty, fundBounty, submitWork as submitWorkToChain, resubmitWork, reviewSubmission, approvePayment, markPaid, remainingSlots, isFull, shortAddress, explorerLink, transactionLink, formatGen, parseGenToWei, validateBountyDraft, isConfigured, getState, subscribe, restoreWallet, connectBrowserWallet, disconnectWallet, hasBrowserWallet, devnetContractLink, DEVNET_CONTRACT } from './lib/genlayer'
 
 const ICONS = { sparkles: Sparkles, file: FileCheck2, search: Search }
 
@@ -91,7 +91,7 @@ function LandingShell({ children, setPage }) {
     <nav className="glass sticky top-4 z-30 mx-auto flex h-16 max-w-[1320px] items-center justify-between rounded-2xl px-4 sm:px-6">
       <button onClick={() => goSection('top')} aria-label="Bountiq home"><Brand /></button>
       <div className="hidden items-center gap-1 md:flex">{[['how','How it works'],['explore','Explore'],['verify','Verification'],['faq','FAQ']].map(([id,label]) => <button key={id} onClick={() => goSection(id)} className="rounded-xl px-4 py-2 text-sm text-[#405467] transition hover:bg-white/60 hover:text-[#0d1a2b]">{label}</button>)}</div>
-      <button onClick={() => setPage('create')} className="rounded-xl bg-[#0c1a2b] px-4 py-3 text-xs font-semibold text-white transition hover:-translate-y-0.5">Post a bounty <ArrowUpRight className="ml-2 inline size-3.5" /></button>
+      <div className="flex items-center gap-2"><a href={devnetContractLink()} target="_blank" rel="noreferrer" title={'Studio Devnet deployment · ' + DEVNET_CONTRACT} className="glass flex items-center gap-2 rounded-xl px-3 py-3 text-[11px] font-semibold text-[#405467] transition hover:text-[#0d1a2b]"><span className="size-2 rounded-full bg-[#69a882]"/><span className="hidden sm:inline">Live contract</span><ExternalLink size={13}/></a><button onClick={() => setPage('create')} className="rounded-xl bg-[#0c1a2b] px-4 py-3 text-xs font-semibold text-white transition hover:-translate-y-0.5">Post a bounty <ArrowUpRight className="ml-2 inline size-3.5" /></button></div>
     </nav>
     {children}
     <Footer goSection={goSection} setPage={setPage}/>
@@ -903,14 +903,18 @@ function Create({ setPage, onCreated, wallet, bounties, submissions, onDirtyChan
     {open ? <CreateBountyModal onClose={() => setOpen(false)} onCreated={onCreated} onDirtyChange={onDirtyChange}/> : null}
   </main>
 }
-function Footer({ goSection, setPage }) { return <footer className="mx-auto max-w-[1180px] border-t border-[#6b8299]/20 py-10"><div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr]"><div><Brand /><p className="mt-4 max-w-xs text-sm leading-relaxed text-[#718396]">A transparent bounty marketplace where completed work is verified before rewards move.</p></div><div><p className="mb-4 text-xs font-bold uppercase tracking-wider text-[#607486]">Product</p><div className="grid gap-3 text-sm text-[#526274]"><button onClick={()=>goSection('how')} className="w-fit">How it works</button><button onClick={()=>goSection('explore')} className="w-fit">Explore bounties</button><button onClick={()=>setPage('create')} className="w-fit">Post a bounty</button><button onClick={()=>goSection('faq')} className="w-fit">FAQ</button></div></div><div><p className="mb-4 text-xs font-bold uppercase tracking-wider text-[#607486]">Ecosystem</p><div className="grid gap-3 text-sm text-[#526274]"><a href="https://genlayer.com" target="_blank" rel="noreferrer">GenLayer <ExternalLink className="ml-1 inline size-3"/></a><a href="https://testnet-faucet.genlayer.com" target="_blank" rel="noreferrer">GenLayer faucet <ExternalLink className="ml-1 inline size-3"/></a><a href="https://gentank.xyz" target="_blank" rel="noreferrer">GenTank <ExternalLink className="ml-1 inline size-3"/></a></div></div></div><div className="mt-10 flex flex-wrap justify-between gap-3 border-t border-[#6b8299]/20 pt-6 text-xs text-[#718396]"><span>© 2026 Bountiq</span><span>Built on GenLayer for GenTank.</span></div></footer> }
+function Footer({ goSection, setPage }) { return <footer className="mx-auto max-w-[1180px] border-t border-[#6b8299]/20 py-10"><div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr]"><div><Brand /><p className="mt-4 max-w-xs text-sm leading-relaxed text-[#718396]">A transparent bounty marketplace where completed work is verified before rewards move.</p></div><div><p className="mb-4 text-xs font-bold uppercase tracking-wider text-[#607486]">Product</p><div className="grid gap-3 text-sm text-[#526274]"><button onClick={()=>goSection('how')} className="w-fit">How it works</button><button onClick={()=>goSection('explore')} className="w-fit">Explore bounties</button><button onClick={()=>setPage('create')} className="w-fit">Post a bounty</button><button onClick={()=>goSection('faq')} className="w-fit">FAQ</button></div></div><div><p className="mb-4 text-xs font-bold uppercase tracking-wider text-[#607486]">Ecosystem</p><div className="grid gap-3 text-sm text-[#526274]"><a href="https://genlayer.com" target="_blank" rel="noreferrer">GenLayer <ExternalLink className="ml-1 inline size-3"/></a><a href="https://testnet-faucet.genlayer.com" target="_blank" rel="noreferrer">GenLayer faucet <ExternalLink className="ml-1 inline size-3"/></a><a href="https://gentank.xyz" target="_blank" rel="noreferrer">GenTank <ExternalLink className="ml-1 inline size-3"/></a><a href={devnetContractLink()} target="_blank" rel="noreferrer">Studio Devnet contract <ExternalLink className="ml-1 inline size-3"/></a></div></div></div><div className="mt-10 flex flex-wrap justify-between gap-3 border-t border-[#6b8299]/20 pt-6 text-xs text-[#718396]"><span>© 2026 Bountiq</span><span>Built on GenLayer for GenTank.</span></div></footer> }
+
+// The landing page owns "/" so a first-time visitor always meets the product
+// story before the workspace. The app itself lives under /app.
+const PAGE_PATHS = { home: '/', bounties: '/app/bounties', submit: '/app/submit', create: '/app/create' }
 
 const pageFromPath = () => {
-  const path = window.location.pathname
+  const path = window.location.pathname.replace(/\/+$/, '') || '/'
   if (path === '/app/create') return 'create'
   if (path === '/app/submit') return 'submit'
-  if (path === '/about') return 'home'
-  return 'bounties'
+  if (path === '/app/bounties') return 'bounties'
+  return 'home'
 }
 
 function App() {
@@ -956,7 +960,7 @@ function App() {
 
   // Browser back/forward must not silently drop a half-written bounty either.
   useEffect(() => {
-    const paths = { home: '/about', bounties: '/', submit: '/app/submit', create: '/app/create' }
+    const paths = PAGE_PATHS
     const handlePop = () => {
       const target = pageFromPath()
       if (createDirty && target !== 'create') {
@@ -978,7 +982,7 @@ function App() {
   }
 
   const goTo = (next) => {
-    const paths = { home: '/about', bounties: '/', submit: '/app/submit', create: '/app/create' }
+    const paths = PAGE_PATHS
     window.history.pushState({}, '', paths[next])
     if (next === 'submit' && !selectedId) { /* keep whatever was remembered */ }
     if (next === 'bounties') remember(null)

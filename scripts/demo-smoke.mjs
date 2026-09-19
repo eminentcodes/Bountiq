@@ -20,13 +20,13 @@ await page.addInitScript(({ address }) => {
   }
 }, { address: ADDRESS })
 
-await page.goto('http://localhost:5174/', { waitUntil: 'networkidle' })
+await page.goto('http://localhost:5174/app/bounties', { waitUntil: 'networkidle' })
 await page.waitForTimeout(3000)
 await page.getByRole('button', { name: /Connect wallet/i }).first().click()
 await page.waitForTimeout(400)
 await page.getByRole('button', { name: /Connect browser wallet/i }).click()
 await page.waitForTimeout(1800)
-await page.goto('http://localhost:5174/', { waitUntil: 'networkidle' })
+await page.goto('http://localhost:5174/app/bounties', { waitUntil: 'networkidle' })
 await page.waitForTimeout(9000)
 
 const rows = page.locator('main button').filter({ hasText: /submissions/ })

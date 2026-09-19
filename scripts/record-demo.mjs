@@ -163,7 +163,7 @@ await page.setContent(CARD_INTRO)
 await wait(hold('01-intro') * 1000)
 
 // ---------------------------------------------------------------- scene 02
-await page.goto('http://localhost:5174/about', { waitUntil: 'networkidle' })
+await page.goto('http://localhost:5174/', { waitUntil: 'networkidle' })
 await wait(700)
 mark('02-problem')
 await glide(0, 430, hold('02-problem') * 1000 - 1200)
@@ -180,7 +180,7 @@ await page.setContent(CARD_CONTRACT)
 await wait(hold('04-contract') * 1000)
 
 // ---------------------------------------------------------------- scene 05
-await page.goto('http://localhost:5174/', { waitUntil: 'networkidle' })
+await page.goto('http://localhost:5174/app/bounties', { waitUntil: 'networkidle' })
 await wait(1500)
 await page.getByRole('button', { name: /Connect wallet/i }).first().click()
 await wait(600)
