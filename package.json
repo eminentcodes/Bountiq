@@ -20,9 +20,7 @@
     "react": "latest",
     "react-dom": "latest",
     "tailwindcss": "latest",
-    "vite": "latest"
-  },
-  "devDependencies": {
+    "vite": "latest",
     "genlayer-js-2": "npm:genlayer-js@2.0.0-rc.1"
   }
 }

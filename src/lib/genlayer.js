@@ -4,25 +4,25 @@
 // create or hold keys. Reads work without a wallet so the marketplace is
 // browsable immediately; writes require a connection.
 
-import { createClient } from 'genlayer-js'
-import { studionet } from 'genlayer-js/chains'
-import { TransactionStatus } from 'genlayer-js/types'
+import { createClient } from 'genlayer-js-2'
+import { studioDevnet } from 'genlayer-js-2/chains'
+import { TransactionStatus } from 'genlayer-js-2/types'
 
 // The deployed address is public, and .env is gitignored, so a fresh clone or a
 // host without env vars configured would otherwise boot with no contract.
 // VITE_BOUNTIQ_CONTRACT still overrides this.
 export const CONTRACT_ADDRESS =
-  import.meta.env.VITE_BOUNTIQ_CONTRACT || '0xB86727DcEBb4cB1E11421fB3dF28e9cc326d79e7'
-export const EXPLORER = 'https://explorer-studio.genlayer.com'
-export const CHAIN_NAME = 'GenLayer Studionet'
+  import.meta.env.VITE_BOUNTIQ_CONTRACT || '0xa476Bd972187BFCc8bbA05D107221bC31Be15B5'
+export const EXPLORER = 'https://explorer-studio-dev.genlayer.com'
+export const CHAIN_NAME = 'GenLayer Studio Devnet'
 
-// The hackathon form required a contract deployed on Studio Devnet (chain
-// 61997). That deployment is public, so it is surfaced in the landing header to
-// keep it discoverable independently of the form. The app itself runs on
-// Studionet above, because genlayer-js 1.1.8 cannot pay the non-zero fee that
-// 61997 requires.
-export const DEVNET_CONTRACT = '0xa476Bd972187BFCc8bbA05D107C221bC31Be15B5'
-export const DEVNET_EXPLORER = 'https://explorer-studio-dev.genlayer.com'
+// This app runs on the Studio Devnet deployment (chain 61997) - the same
+// deployment the hackathon form required. It needs the 2.x SDK because the
+// 1.x client sends a zero-fee transaction and this chain rejects that with
+// FeeValueMustBeNonZero. The 2.x client estimates the fee inside
+// writeContract, so writes look the same from the caller's side.
+export const DEVNET_CONTRACT = CONTRACT_ADDRESS
+export const DEVNET_EXPLORER = EXPLORER
 
 export function devnetContractLink() {
   return `${DEVNET_EXPLORER}/address/${DEVNET_CONTRACT}`
@@ -30,7 +30,8 @@ export function devnetContractLink() {
 
 const MODE_KEY = 'bountiq.wallet.mode'
 
-// Route RPC through the dev proxy to avoid the Studio RPC's missing CORS headers.
+// In dev the RPC goes through the /gl-api proxy in vite.config.js, so every
+// request is same-origin. In production the app calls the RPC directly.
 const ENDPOINT = import.meta.env.DEV ? `${window.location.origin}/gl-api` : undefined
 
 let state = { mode: null, address: null, provider: null }
@@ -63,9 +64,9 @@ function setState(next) {
 export function getClient() {
   if (cachedClient) return cachedClient
   if (state.mode === 'browser' && state.provider) {
-    cachedClient = createClient({ chain: studionet, provider: state.provider, endpoint: ENDPOINT })
+    cachedClient = createClient({ chain: studioDevnet, provider: state.provider, endpoint: ENDPOINT })
   } else {
-    cachedClient = createClient({ chain: studionet, endpoint: ENDPOINT })
+    cachedClient = createClient({ chain: studioDevnet, endpoint: ENDPOINT })
   }
   return cachedClient
 }
@@ -75,7 +76,7 @@ export function hasBrowserWallet() {
 }
 
 async function ensureChain(provider) {
-  const chainId = `0x${studionet.id.toString(16)}`
+  const chainId = `0x${studioDevnet.id.toString(16)}`
   try {
     await provider.request({ method: 'wallet_switchEthereumChain', params: [{ chainId }] })
   } catch (error) {
@@ -88,7 +89,7 @@ async function ensureChain(provider) {
             chainId,
             chainName: CHAIN_NAME,
             nativeCurrency: { name: 'GEN', symbol: 'GEN', decimals: 18 },
-            rpcUrls: [studionet.rpcUrls.default.http[0]],
+            rpcUrls: [studioDevnet.rpcUrls.default.http[0]],
             blockExplorerUrls: [EXPLORER],
           },
         ],
@@ -315,7 +316,9 @@ function activeAccount() {
   return undefined
 }
 
-const TRANSIENT_RPC = /Unexpected end of JSON input|Failed to execute 'json'|unknown RPC error|fetch failed|ECONNRESET|socket hang up|network error|timed out|timeout|502|503|504/i
+// `Failed to fetch` (browser) and `fetch failed` (node) are the same dropped
+// connection with different wording, so both must be listed.
+const TRANSIENT_RPC = /Unexpected end of JSON input|Failed to execute 'json'|unknown RPC error|failed to fetch|fetch failed|load failed|ECONNRESET|socket hang up|network error|timed out|timeout|502|503|504/i
 
 function isTransientRpc(value) {
   const raw =
@@ -334,8 +337,9 @@ async function send(functionName, args, value = 0n) {
 
   const client = getClient()
 
-  // Studionet occasionally answers with an empty body. Retry the transport a few
-  // times instead of failing the whole write on one dropped response.
+  // The Studio RPC occasionally answers with an empty body or drops the
+  // connection outright. Retry the transport instead of failing the whole write
+  // on one bad response.
   let hash = null
   for (let attempt = 0; ; attempt += 1) {
     try {

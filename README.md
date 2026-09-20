@@ -37,7 +37,7 @@ This is the deployment that satisfies the Studio Next contract requirement. It r
 
 ### Studionet - chain 61999
 
-This is the deployment the frontend reads and writes, and the one the demo video was recorded against.
+The demo video was recorded against this deployment. The app now runs on the Studio Devnet deployment above, which is the same contract ported to the newer runtime.
 
 | | |
 |---|---|
@@ -52,12 +52,16 @@ This is the deployment the frontend reads and writes, and the one the demo video
 
 ### Why two chains
 
-`genlayer-js` 1.1.8, the version the frontend ships, submits a zero-fee transaction. Chain 61997 rejects that with `FeeValueMustBeNonZero`, while chain 61999 accepts it. So the app runs on Studionet, and the Devnet deployment is produced by `scripts/deploy-devnet.mjs`, which uses genlayer-js 2.x (installed under the npm alias `genlayer-js-2`) to compute a real fee. Both were deployed from this repository. Porting the contract for the newer runtime meant moving to the `py-genlayer:test` runner and the current `gl.contract` / `gl.vm` / `gl.storage` namespaces.
+**The app reads and writes Studio Devnet, chain 61997.**
+
+Getting there needed two changes. First the contract had to be ported to the newer runtime - `py-genlayer:test` and the current `gl.contract` / `gl.vm` / `gl.storage` namespaces - which is `contracts/bountiq-devnet.py`. Then the frontend had to move from `genlayer-js` 1.x to 2.x, because the 1.x client submits a zero-fee transaction and 61997 rejects that with `FeeValueMustBeNonZero`. The 2.x client is installed under the npm alias `genlayer-js-2` and estimates the fee inside `writeContract`, so no call site had to change.
+
+The Studionet deployment is the earlier one, kept because the demo video was recorded against it. Both were deployed from this repository.
 
 You can check the live state of either deployment yourself:
 
 ```bash
-npm run verify:state          # reads get_state from the Studionet contract
+npm run verify:state          # reads get_state from both deployments
 node scripts/demo-smoke.mjs   # drives the real UI against the live contract
 ```
 
@@ -67,8 +71,8 @@ node scripts/demo-smoke.mjs   # drives the real UI against the live contract
 |---|---|
 | **Live app** | https://REPLACE-WITH-YOUR-VERCEL-URL |
 | **Repository** | https://github.com/Eminent18254/bountiq |
-| Frontend contract | `0xB86727DcEBb4cB1E11421fB3dF28e9cc326d79e7` (Studionet) |
-| Required contract | `0xa476Bd972187BFCc8bbA05D107221bC31Be15B5` (Studio Devnet) |
+| App contract | `0xa476Bd972187BFCc8bbA05D107221bC31Be15B5` (Studio Devnet 61997) |
+| Earlier deployment | `0xB86727DcEBb4cB1E11421fB3dF28e9cc326d79e7` (Studionet 61999) |
 
 The deployment is the static bundle produced by `npm run build` in this repository. `vercel.json` supplies the SPA rewrites, so a hard refresh on any app route resolves instead of returning a 404.
 
@@ -140,7 +144,7 @@ The stack is deliberately small.
 * **`genlayer-js` 1.1.8** for reads, writes and the browser wallet
 * **`motion`** for the page transitions
 * **`lucide-react`** for icons
-* **GenLayer Studionet** (chain 61999) for the live app, **GenLayer Studio Devnet** (chain 61997) for the required deployment
+* **GenLayer Studio Devnet** (chain 61997) for the live app, **GenLayer Studionet** (chain 61999) for the earlier deployment the demo video used
 * Python **Intelligent Contract** on GenLayer
 
 The application keeps the interface and the chain layer separate. Everything chain-facing - the client, the wallet, reads, writes, GEN/wei conversion and the bounty form validation - lives in `src/lib/genlayer.js`. The UI never talks to the RPC directly.
@@ -169,8 +173,8 @@ The application keeps the interface and the chain layer separate. Everything cha
                           |
                           v
         Bountiq Intelligent Contract  (Python)
-          contracts/bountiq.py         -> Studionet   61999
-          contracts/bountiq-devnet.py  -> Devnet      61997
+          contracts/bountiq-devnet.py  -> Studio Devnet  61997  (the app)
+          contracts/bountiq.py         -> Studionet      61999  (earlier deploy)
                           |
                           v
           gl.nondet.exec_prompt + leader/validator
@@ -189,8 +193,8 @@ src/
   components/Brand.jsx     the Bountiq wordmark
   index.css                Tailwind v4 entry and design tokens
 contracts/
-  bountiq.py               the Intelligent Contract (Studionet runtime)
-  bountiq-devnet.py        the same contract ported to the newer Studio Devnet runtime
+  bountiq-devnet.py        the Intelligent Contract on the Studio Devnet runtime - this is what the app calls
+  bountiq.py               the same contract on the Studionet runtime (earlier deployment)
 scripts/
   deploy.mjs               deploy to Studionet and write the address to .env
   deploy-devnet.mjs        deploy to Studio Devnet 61997 (genlayer-js 2.x) -> .env.devnet
@@ -238,7 +242,7 @@ Escrow lives in the contract's own accounting, funded by the creator through the
 
 Bountiq is a testnet prototype. Two things are worth stating plainly rather than implying otherwise.
 
-* **Payment release is recorded on chain, not transferred.** `mark_paid` draws the reward down from escrow and sets the submission's payment state to `paid`. There is no value transfer to the contributor's address, because Studionet does not let a contract push GEN to an end-user EOA. The escrow accounting, the winner cap and the payout address recorded at submission time are all real and on chain; the transfer itself is the piece that a production deployment with a payout rail would complete.
+* **Payment release is recorded on chain, not transferred.** `mark_paid` draws the reward down from escrow and sets the submission's payment state to `paid`. There is no value transfer to the contributor's address, because this chain does not let a contract push GEN to an end-user EOA. The escrow accounting, the winner cap and the payout address recorded at submission time are all real and on chain; the transfer itself is the piece that a production deployment with a payout rail would complete.
 * **`scripts/test-escrow.mjs` is stale.** It still uses an earlier `create_bounty` signature and will fail if run. The smoke test above is the maintained one.
 
 ## Additional Features
@@ -294,4 +298,4 @@ The landing page always owns `/`, so a first-time visitor meets the product stor
 
 ## Built On
 
-[GenLayer](https://genlayer.com) Intelligent Contracts on Studionet (chain 61999) and Studio Devnet (chain 61997) - React 18 - Vite - Tailwind CSS v4 - `genlayer-js` - `motion` - `lucide-react`.
+[GenLayer](https://genlayer.com) Intelligent Contracts on Studio Devnet (chain 61997) and Studionet (chain 61999) - React 18 - Vite - Tailwind CSS v4 - `genlayer-js` 2.x - `motion` - `lucide-react`.
