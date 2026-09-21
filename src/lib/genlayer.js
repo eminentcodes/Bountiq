@@ -265,6 +265,30 @@ function parseJson(value, fallback) {
   }
 }
 
+// Contract-side failures come back as base64 inside receipt.result with
+// execution_result ERROR. Recover the human message so the UI can show it.
+function decodeContractError(error) {
+  let node = error
+  for (let depth = 0; node && depth < 6; depth += 1) {
+    const receipt = node?.data?.receipt || node?.receipt
+    if (receipt && receipt.execution_result && receipt.execution_result !== 'SUCCESS') {
+      const encoded = receipt.result
+      if (typeof encoded === 'string' && encoded.length > 0) {
+        try {
+          const decoded = typeof atob === 'function'
+            ? atob(encoded)
+            : Buffer.from(encoded, 'base64').toString('utf8')
+          // GenVM prefixes the payload with a control byte, so strip it.
+          if (decoded && /[a-zA-Z]/.test(decoded)) return decoded.replace(/^[\u0000-\u001f]+/, '').trim()
+        } catch {}
+      }
+      if (typeof receipt.stderr === 'string' && receipt.stderr.trim()) return receipt.stderr.trim()
+    }
+    node = node?.cause
+  }
+  return ''
+}
+
 function readError(error) {
   // viem wraps wallet failures, so prefer the wallet's own wording.
   const raw =
@@ -272,19 +296,24 @@ function readError(error) {
     (error?.shortMessage && String(error.shortMessage)) ||
     (error?.message && String(error.message)) ||
     String(error)
-  if (/undetermined|timeout/i.test(raw)) {
+  // An intelligent contract that reverts reports its message base64-encoded
+  // inside the receipt, so decode it before matching known messages.
+  const contractText = decodeContractError(error)
+  const text = contractText || raw
+  if (/undetermined|timeout/i.test(text)) {
     return 'The validator committee could not agree on a result. Please try again.'
   }
-  if (/no longer accepting/i.test(raw)) return 'This bounty is no longer accepting submissions.'
-  if (/all the submissions it asked for/i.test(raw)) return 'This bounty already has all the submissions it asked for.'
-  if (/Only the bounty creator/i.test(raw)) return 'Only the bounty creator can manage its submissions.'
-  if (/Accept the submission before/i.test(raw)) return 'Accept the submission before approving its payment.'
-  if (/Approve the payment before/i.test(raw)) return 'Approve the payment before marking it paid.'
-  if (/must be connected|No account/i.test(raw)) return 'Connect a wallet before continuing.'
-  if (/chainId should be same as current chainId|does not match the target chain|wrong network/i.test(raw)) return 'Your wallet is on a different network than ' + CHAIN_NAME + ' (chain ' + studioDevnet.id + '). Switch networks in your wallet and try again.'
-  if (/user rejected|User denied|4001/i.test(raw)) return 'You rejected the request in your wallet.'
-  if (isTransientRpc(raw)) return 'The RPC dropped the connection before it answered. Nothing is guaranteed to have changed, so check the latest state and try again.'
-  return raw
+  if (/no longer accepting/i.test(text)) return 'This bounty is no longer accepting submissions.'
+  if (/all the submissions it asked for/i.test(text)) return 'This bounty already has all the submissions it asked for.'
+  if (/Only the bounty creator/i.test(text)) return 'Only the bounty creator can manage its submissions.'
+  if (/Accept the submission before/i.test(text)) return 'Accept the submission before approving its payment.'
+  if (/Approve the payment before/i.test(text)) return 'Approve the payment before marking it paid.'
+  if (/must be connected|No account/i.test(text)) return 'Connect a wallet before continuing.'
+  if (/chainId should be same as current chainId|does not match the target chain|wrong network/i.test(text)) return 'Your wallet is on a different network than ' + CHAIN_NAME + ' (chain ' + studioDevnet.id + '). Switch networks in your wallet and try again.'
+  if (/user rejected|User denied|4001/i.test(text)) return 'You rejected the request in your wallet.'
+  if (/FeeValueMustBeNonZero|fee value must be non-?zero/i.test(text)) return 'The network rejected the transaction because it carried no fee. Reload the page and try again.'
+  if (isTransientRpc(text)) return 'The RPC dropped the connection before it answered. Nothing is guaranteed to have changed, so check the latest state and try again.'
+  return text
 }
 
 export async function fetchState() {
@@ -370,12 +399,35 @@ async function send(functionName, args, value = 0n) {
   let hash = null
   for (let attempt = 0; ; attempt += 1) {
     try {
+      // Studio Devnet rejects a zero-fee transaction with FeeValueMustBeNonZero.
+      // writeContract does not estimate on its own: with no explicit fees object
+      // the distribution stays all zeroes and feeValue resolves to 0n. Ask the
+      // client for a fee preset for this exact call and pass it through.
+      let fees
+      try {
+        fees = await client.estimateTransactionFeesForWrite({
+          account: activeAccount(),
+          address: CONTRACT_ADDRESS,
+          functionName,
+          args,
+          value,
+        })
+      } catch (error) {
+        // The write-ready estimator simulates the call, so a reverting
+        // contract speaks through it. Report that instead of paying for a
+        // transaction that would fail the same way. Anything else (a dropped
+        // RPC, an undetermined committee) falls back to the policy-based
+        // preset so the write is still attempted.
+        if (decodeContractError(error)) throw new Error(readError(error))
+        fees = await client.estimateTransactionFees({})
+      }
       hash = await client.writeContract({
         account: activeAccount(),
         address: CONTRACT_ADDRESS,
         functionName,
         args,
         value,
+        fees,
       })
       break
     } catch (error) {
