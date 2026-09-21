@@ -10,9 +10,20 @@ import { TransactionStatus } from 'genlayer-js-2/types'
 
 // The deployed address is public, and .env is gitignored, so a fresh clone or a
 // host without env vars configured would otherwise boot with no contract.
-// VITE_BOUNTIQ_CONTRACT still overrides this.
-export const CONTRACT_ADDRESS =
-  import.meta.env.VITE_BOUNTIQ_CONTRACT || '0xa476Bd972187BFCc8bbA05D107221bC31Be15B5'
+//
+// VITE_BOUNTIQ_CONTRACT still overrides it, but the override is validated
+// first. A stale or malformed value from a host's env dashboard (a truncated
+// address, a leftover from another project, whitespace) used to be truthy, so
+// it replaced the working address and bricked the app with "VITE_BOUNTIQ_CONTRACT
+// is not configured". Anything that is not a well-formed address is ignored and
+// the deployed address is used instead.
+const FALLBACK_CONTRACT = '0xa476Bd972187BFCc8bbA05D107C221bC31Be15B5'
+const ADDRESS_PATTERN = /^0x[0-9a-fA-F]{40}$/
+const CONFIGURED_CONTRACT = String(import.meta.env.VITE_BOUNTIQ_CONTRACT ?? '').trim()
+
+export const CONTRACT_ADDRESS = ADDRESS_PATTERN.test(CONFIGURED_CONTRACT)
+  ? CONFIGURED_CONTRACT
+  : FALLBACK_CONTRACT
 export const EXPLORER = 'https://explorer-studio-dev.genlayer.com'
 export const CHAIN_NAME = 'GenLayer Studio Devnet'
 
@@ -170,7 +181,7 @@ export function transactionLink(hash) {
 // ---------------------------------------------------------------- contract API
 
 export function isConfigured() {
-  return typeof CONTRACT_ADDRESS === 'string' && /^0x[0-9a-fA-F]{40}$/.test(CONTRACT_ADDRESS)
+  return ADDRESS_PATTERN.test(String(CONTRACT_ADDRESS))
 }
 
 const PALETTE = [

@@ -25,15 +25,15 @@ This is the deployment that satisfies the Studio Next contract requirement. It r
 
 | | |
 |---|---|
-| **Contract address** | `0xa476Bd972187BFCc8bbA05D107221bC31Be15B5` |
-| **Explorer link** | https://explorer-studio-dev.genlayer.com/address/0xa476Bd972187BFCc8bbA05D107221bC31Be15B5 |
+| **Contract address** | `0xa476Bd972187BFCc8bbA05D107C221bC31Be15B5` |
+| **Explorer link** | https://explorer-studio-dev.genlayer.com/address/0xa476Bd972187BFCc8bbA05D107C221bC31Be15B5 |
 | RPC | `https://studio-dev.genlayer.com/api` |
 | Deploy transaction | https://explorer-studio-dev.genlayer.com/tx/0x931708460d3aca812647fcdf5fe615737553cde49874f63a3619f41f5bff4c04 |
 | Source | `contracts/bountiq-devnet.py` |
 | Live state | 3 seeded bounties, 0 submissions |
 | Redeploy | `npm run deploy:devnet` |
 
-> **Direct link:** https://explorer-studio-dev.genlayer.com/address/0xa476Bd972187BFCc8bbA05D107221bC31Be15B5
+> **Direct link:** https://explorer-studio-dev.genlayer.com/address/0xa476Bd972187BFCc8bbA05D107C221bC31Be15B5
 
 ### Studionet - chain 61999
 
@@ -71,7 +71,7 @@ node scripts/demo-smoke.mjs   # drives the real UI against the live contract
 |---|---|
 | **Live app** | https://REPLACE-WITH-YOUR-VERCEL-URL |
 | **Repository** | https://github.com/Eminent18254/bountiq |
-| App contract | `0xa476Bd972187BFCc8bbA05D107221bC31Be15B5` (Studio Devnet 61997) |
+| App contract | `0xa476Bd972187BFCc8bbA05D107C221bC31Be15B5` (Studio Devnet 61997) |
 | Earlier deployment | `0xB86727DcEBb4cB1E11421fB3dF28e9cc326d79e7` (Studionet 61999) |
 
 The deployment is the static bundle produced by `npm run build` in this repository. `vercel.json` supplies the SPA rewrites, so a hard refresh on any app route resolves instead of returning a 404.
