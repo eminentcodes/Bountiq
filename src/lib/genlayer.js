@@ -281,6 +281,8 @@ function readError(error) {
   if (/Accept the submission before/i.test(raw)) return 'Accept the submission before approving its payment.'
   if (/Approve the payment before/i.test(raw)) return 'Approve the payment before marking it paid.'
   if (/must be connected|No account/i.test(raw)) return 'Connect a wallet before continuing.'
+  if (/chainId should be same as current chainId|does not match the target chain|wrong network/i.test(raw)) return 'Your wallet is on a different network than ' + CHAIN_NAME + ' (chain ' + studioDevnet.id + '). Switch networks in your wallet and try again.'
+  if (/user rejected|User denied|4001/i.test(raw)) return 'You rejected the request in your wallet.'
   if (isTransientRpc(raw)) return 'The RPC dropped the connection before it answered. Nothing is guaranteed to have changed, so check the latest state and try again.'
   return raw
 }
@@ -345,6 +347,20 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 async function send(functionName, args, value = 0n) {
   if (!isConfigured()) throw new Error("VITE_BOUNTIQ_CONTRACT is not configured")
   if (!isConnected()) throw new Error("Connect a wallet before continuing.")
+
+  // The wallet can be switched to another network at any point after it was
+  // connected, and viem then refuses to sign with "chainId should be same as
+  // current chainId". Re-assert the chain on every write so that failure mode
+  // becomes a network prompt instead of a dead submit button.
+  if (state.mode === 'browser' && state.provider) {
+    await ensureChain(state.provider)
+    // MetaMask resolves the switch request before it always reports the new
+    // chain back, so confirm the active chain instead of trusting the switch.
+    const active = await state.provider.request({ method: 'eth_chainId' })
+    if (String(active).toLowerCase() !== `0x${studioDevnet.id.toString(16)}`) {
+      throw new Error('Your wallet is on a different network than ' + CHAIN_NAME + ' (chain ' + studioDevnet.id + '). Switch networks in your wallet and try again.')
+    }
+  }
 
   const client = getClient()
 
